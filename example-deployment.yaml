@@ -12,7 +12,7 @@ spec:
         app: k8s-events-streamer
     spec:
       containers:
-      - image: woshiywl1985/k8s-events-streamer:0.0.1
+      - image: woshiywl1985/k8s-events-streamer:latest
         imagePullPolicy: Always
         name: k8s-events-streamer
         env:

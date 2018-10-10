@@ -1,4 +1,5 @@
 PyInstaller==3.3
+boto3==1.9.19
 flake8==2.5.4
 requests==2.18.4
 kubernetes==v4.0.0

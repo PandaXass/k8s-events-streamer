@@ -1,15 +1,18 @@
-[![Build Status](https://api.travis-ci.org/Andrey9kin/k8s-events-to-slack-streamer.svg?branch=master)](https://travis-ci.org/Andrey9kin/k8s-events-to-slack-streamer)
-[![Docker Automated build](https://img.shields.io/docker/automated/andrey9kin/k8s-events-to-slack-streamer.svg)](https://hub.docker.com/r/andrey9kin/k8s-events-to-slack-streamer)
+[![Build Status](https://api.travis-ci.org/PandaXass/k8s-events-to-slack-streamer.svg?branch=master)](https://travis-ci.org/PandaXass/k8s-events-streamer)
+[![Docker Automated build](https://img.shields.io/docker/automated/pandaxass/k8s-events-to-slack-streamer.svg)](https://hub.docker.com/r/pandaxass/k8s-events-to-slack-streamer)
 
-# K8S events to Slack streamer
+# K8S events streamer
 
+Based on https://github.com/Andrey9kin/k8s-events-to-slack-streamer.
+Extend the feature of streaming k8s events to AWS CloudWatch logs.
 Streams k8s events from k8s namespace to Slack channel as a Slack bot using incoming web hooks. No tokens needed.
 
 # Configuration
 
 Configuration is done via env variables that you set in deployment or configmap.
 
-* `K8S_EVENTS_STREAMER_INCOMING_WEB_HOOK_URL` - Slack web hook URL where to send events. Mandatory parameter.
+* `K8S_EVENTS_STREAMER_CW_LOG_GROUP` - AWS CloudWatch log group name.
+* `K8S_EVENTS_STREAMER_INCOMING_WEB_HOOK_URL` - Slack web hook URL where to send events.
 * `K8S_EVENTS_STREAMER_NAMESPACE` - k8s namespace to collect events from. Will use `default` if not defined
 * `K8S_EVENTS_STREAMER_DEBUG` - Enable debug print outs to the log. `False` if not defined. Set to `True` to enable.
 * `K8S_EVENTS_STREAMER_SKIP_DELETE_EVENTS` - Skip all events of type DELETED by setting  env variable to `True`. `False` if not defined. Very useful since those events tells you that k8s event was deleted which has no value to you as operator.

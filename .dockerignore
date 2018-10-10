@@ -1,6 +1,8 @@
 .git
 .gitignore
+.travis.yml
+*.png
 env
 setup.sh
 README.md
-k8s-events-to-slack-streamer.yaml
+example-deployment.yaml

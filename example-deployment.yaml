@@ -1,25 +1,27 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: k8s-events-to-slack-streamer
+  name: k8s-events-streamer
   labels:
-    app: k8s-events-to-slack-streamer
+    app: k8s-events-streamer
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: k8s-events-to-slack-streamer
+        app: k8s-events-streamer
     spec:
       containers:
-      - image: andrey9kin/k8s-events-to-slack-streamer:1.3.1
+      - image: woshiywl1985/k8s-events-streamer:0.0.1
         imagePullPolicy: Always
-        name: k8s-events-to-slack-streamer
+        name: k8s-events-streamer
         env:
-        - name: K8S_EVENTS_STREAMER_INCOMING_WEB_HOOK_URL
-          value: PUT-WEB-HOOK-URL-HERE
+#        - name: K8S_EVENTS_STREAMER_INCOMING_WEB_HOOK_URL
+#          value: PUT-WEB-HOOK-URL-HERE
+        - name: K8S_EVENTS_STREAMER_CW_LOG_GROUP
+          value: PUT-CW-LOG-GROUP-NAME-HERE
         - name: K8S_EVENTS_STREAMER_NAMESPACE
-          value: 'default' 
+          value: 'default'
 #        - name: K8S_EVENTS_STREAMER_DEBUG
 #          value: 'true'
         - name: K8S_EVENTS_STREAMER_SKIP_DELETE_EVENTS

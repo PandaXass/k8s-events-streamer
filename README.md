@@ -1,10 +1,12 @@
-[![Build Status](https://api.travis-ci.org/PandaXass/k8s-events-to-slack-streamer.svg?branch=master)](https://travis-ci.org/PandaXass/k8s-events-streamer)
-[![Docker Automated build](https://img.shields.io/docker/automated/pandaxass/k8s-events-to-slack-streamer.svg)](https://hub.docker.com/r/pandaxass/k8s-events-to-slack-streamer)
+[![Build Status](https://api.travis-ci.org/PandaXass/k8s-events-streamer.svg?branch=master)](https://travis-ci.org/PandaXass/k8s-events-streamer)
+[![Docker Automated build](https://img.shields.io/docker/automated/woshiywl1985/k8s-events-streamer.svg)](https://hub.docker.com/r/woshiywl1985/k8s-events-streamer)
 
 # K8S events streamer
 
 Based on https://github.com/Andrey9kin/k8s-events-to-slack-streamer.
+
 Extend the feature of streaming k8s events to AWS CloudWatch logs.
+
 Streams k8s events from k8s namespace to Slack channel as a Slack bot using incoming web hooks. No tokens needed.
 
 # Configuration

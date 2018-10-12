@@ -18,6 +18,8 @@ spec:
         env:
 #        - name: K8S_EVENTS_STREAMER_INCOMING_WEB_HOOK_URL
 #          value: PUT-WEB-HOOK-URL-HERE
+        - name: K8S_EVENTS_STREAMER_AWS_REGION
+          value: 'us-east-1'
         - name: K8S_EVENTS_STREAMER_CW_LOG_GROUP
           value: PUT-CW-LOG-GROUP-NAME-HERE
         - name: K8S_EVENTS_STREAMER_NAMESPACE

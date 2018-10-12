@@ -83,6 +83,7 @@ def main():
         logger.setLevel(logging.INFO)
 
     logger.info("Reading configuration...")
+    aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')
     k8s_namespace_name = os.environ.get(
         'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
     skip_delete_events = os.environ.get(
@@ -104,7 +105,7 @@ def main():
     logger.info("Configuration is OK")
 
     if cw_log_group:
-        client_cw_logs = boto3.client('logs')
+        client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
         logger.info("Processing events...")
         for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):

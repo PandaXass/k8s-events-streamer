@@ -135,13 +135,13 @@ def main():
                     client_cw_logs.put_log_events(
                         logGroupName=cw_log_group,
                         logStreamName=cw_log_stream,
-                        log_events=event,
+                        logEvents=event,
                         sequenceToken=r['uploadSequenceToken'])
                 else:
                     client_cw_logs.put_log_events(
                         logGroupName=cw_log_group,
                         logStreamName=cw_log_stream,
-                        log_events=event)
+                        logEvents=event)
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

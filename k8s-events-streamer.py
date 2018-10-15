@@ -140,7 +140,7 @@ def main():
                         logEvents=[
                             {
                                 'timestamp': creation_timestamp,
-                                'message': json.dumps(event)
+                                'message': json.dumps(event['object'])
                             }
                         ],
                         sequenceToken=r['uploadSequenceToken'])
@@ -151,7 +151,7 @@ def main():
                         logEvents=[
                             {
                                 'timestamp': creation_timestamp,
-                                'message': json.dumps(event)
+                                'message': json.dumps(event['object'])
                             }
                         ])
             if slack_web_hook_url:

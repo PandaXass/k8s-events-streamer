@@ -121,6 +121,8 @@ def main():
             if cw_log_group:
                 pod = event['object'].involved_object.name
                 kind = event['object'].involved_object.kind
+                creation_timestamp = int(
+                    event.metadata.creation_timestamp.timestamp())
                 # namespace = event['object'].involved_object.namespace
                 cw_log_stream = '{}/{}/{}'.format(
                     k8s_namespace_name, kind, pod)
@@ -135,13 +137,23 @@ def main():
                     client_cw_logs.put_log_events(
                         logGroupName=cw_log_group,
                         logStreamName=cw_log_stream,
-                        logEvents=event,
+                        logEvents=[
+                            {
+                                'timestamp': creation_timestamp,
+                                'message': json.dumps(event)
+                            }
+                        ],
                         sequenceToken=r['uploadSequenceToken'])
                 else:
                     client_cw_logs.put_log_events(
                         logGroupName=cw_log_group,
                         logStreamName=cw_log_stream,
-                        logEvents=event)
+                        logEvents=[
+                            {
+                                'timestamp': creation_timestamp,
+                                'message': json.dumps(event)
+                            }
+                        ])
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

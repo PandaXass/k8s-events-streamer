@@ -129,13 +129,21 @@ def main():
 
                 r = client_cw_logs.describe_log_streams(
                     logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=1)
-                if not r['logStreams']:
+                if not r['logStreams']:  # New log stream
                     logger.info('Create cloudwatch log stream {} in log group {}'.format(
                         cw_log_stream, cw_log_group))
-                    r = client_cw_logs.create_log_stream(
+                    client_cw_logs.create_log_stream(
                         logGroupName=cw_log_group, logStreamName=cw_log_stream)
-
-                if 'uploadSequenceToken' in r['logStreams'][0]:
+                    client_cw_logs.put_log_events(
+                        logGroupName=cw_log_group,
+                        logStreamName=cw_log_stream,
+                        logEvents=[
+                            {
+                                'timestamp': creation_epoch_ms,
+                                'message': str(event)
+                            }
+                        ])
+                else:
                     client_cw_logs.put_log_events(
                         logGroupName=cw_log_group,
                         logStreamName=cw_log_stream,
@@ -146,16 +154,7 @@ def main():
                             }
                         ],
                         sequenceToken=r['logStreams'][0]['uploadSequenceToken'])
-                else:
-                    client_cw_logs.put_log_events(
-                        logGroupName=cw_log_group,
-                        logStreamName=cw_log_stream,
-                        logEvents=[
-                            {
-                                'timestamp': creation_epoch_ms,
-                                'message': str(event)
-                            }
-                        ])
+
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

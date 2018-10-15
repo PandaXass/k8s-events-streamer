@@ -7,6 +7,7 @@ import logging
 import requests
 import boto3
 import kubernetes
+from dateutil.tz import tzlocal
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -121,8 +122,8 @@ def main():
             if cw_log_group:
                 pod = event['object'].involved_object.name
                 kind = event['object'].involved_object.kind
-                creation_timestamp = int(
-                    event['object'].metadata.creation_timestamp.timestamp())
+                creation_epoch_ms = int(
+                    event['object'].metadata.creation_timestamp.timestamp()) * 1000
                 cw_log_stream = '{}/{}/{}'.format(
                     k8s_namespace_name, kind, pod)
 
@@ -140,7 +141,7 @@ def main():
                         logStreamName=cw_log_stream,
                         logEvents=[
                             {
-                                'timestamp': creation_timestamp,
+                                'timestamp': creation_epoch_ms,
                                 'message': str(event)
                             }
                         ],
@@ -151,7 +152,7 @@ def main():
                         logStreamName=cw_log_stream,
                         logEvents=[
                             {
-                                'timestamp': creation_timestamp,
+                                'timestamp': creation_epoch_ms,
                                 'message': str(event)
                             }
                         ])

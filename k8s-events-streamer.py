@@ -133,19 +133,28 @@ def main():
                         cw_log_stream, cw_log_group))
                     client_cw_logs.create_log_stream(
                         logGroupName=cw_log_group, logStreamName=cw_log_stream)
-                    # Describe the log stream again to get sequence token
-                    r = client_cw_logs.describe_log_streams(
-                        logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=1)
-                client_cw_logs.put_log_events(
-                    logGroupName=cw_log_group,
-                    logStreamName=cw_log_stream,
-                    logEvents=[
-                        {
-                            'timestamp': creation_timestamp,
-                            'message': str(event)
-                        }
-                    ],
-                    sequenceToken=r['logStreams'][0]['uploadSequenceToken'])
+
+                if 'uploadSequenceToken' in r['logStreams'][0]:
+                    client_cw_logs.put_log_events(
+                        logGroupName=cw_log_group,
+                        logStreamName=cw_log_stream,
+                        logEvents=[
+                            {
+                                'timestamp': creation_timestamp,
+                                'message': str(event)
+                            }
+                        ],
+                        sequenceToken=r['logStreams'][0]['uploadSequenceToken'])
+                else:
+                    client_cw_logs.put_log_events(
+                        logGroupName=cw_log_group,
+                        logStreamName=cw_log_stream,
+                        logEvents=[
+                            {
+                                'timestamp': creation_timestamp,
+                                'message': str(event)
+                            }
+                        ])
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

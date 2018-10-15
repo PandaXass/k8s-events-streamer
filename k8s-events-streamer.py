@@ -131,7 +131,7 @@ def main():
                 if not r['logStreams']:
                     logger.info('Create cloudwatch log stream {} in log group {}'.format(
                         cw_log_stream, cw_log_group))
-                    client_cw_logs.create_log_stream(
+                    r = client_cw_logs.create_log_stream(
                         logGroupName=cw_log_group, logStreamName=cw_log_stream)
 
                 if 'uploadSequenceToken' in r['logStreams'][0]:

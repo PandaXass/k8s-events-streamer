@@ -145,7 +145,7 @@ def main():
                             'message': str(event)
                         }
                     ],
-                    sequenceToken=r['uploadSequenceToken'])
+                    sequenceToken=r['logStreams'][0]['uploadSequenceToken'])
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

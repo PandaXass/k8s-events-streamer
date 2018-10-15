@@ -123,9 +123,9 @@ def main():
                 kind = event['object'].involved_object.kind
                 creation_timestamp = int(
                     event['object'].metadata.creation_timestamp.timestamp())
-                # namespace = event['object'].involved_object.namespace
                 cw_log_stream = '{}/{}/{}'.format(
                     k8s_namespace_name, kind, pod)
+
                 r = client_cw_logs.describe_log_streams(
                     logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=1)
                 if not r['logStreams']:
@@ -133,27 +133,19 @@ def main():
                         cw_log_stream, cw_log_group))
                     client_cw_logs.create_log_stream(
                         logGroupName=cw_log_group, logStreamName=cw_log_stream)
-                if 'uploadSequenceToken' in r:
-                    client_cw_logs.put_log_events(
-                        logGroupName=cw_log_group,
-                        logStreamName=cw_log_stream,
-                        logEvents=[
-                            {
-                                'timestamp': creation_timestamp,
-                                'message': str(event)
-                            }
-                        ],
-                        sequenceToken=r['uploadSequenceToken'])
-                else:
-                    client_cw_logs.put_log_events(
-                        logGroupName=cw_log_group,
-                        logStreamName=cw_log_stream,
-                        logEvents=[
-                            {
-                                'timestamp': creation_timestamp,
-                                'message': str(event)
-                            }
-                        ])
+                    # Describe the log stream again to get sequence token
+                    r = client_cw_logs.describe_log_streams(
+                        logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=1)
+                client_cw_logs.put_log_events(
+                    logGroupName=cw_log_group,
+                    logStreamName=cw_log_stream,
+                    logEvents=[
+                        {
+                            'timestamp': creation_timestamp,
+                            'message': str(event)
+                        }
+                    ],
+                    sequenceToken=r['uploadSequenceToken'])
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
                     event, users_to_notify)

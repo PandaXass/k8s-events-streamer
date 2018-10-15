@@ -122,7 +122,7 @@ def main():
                 pod = event['object'].involved_object.name
                 kind = event['object'].involved_object.kind
                 creation_timestamp = int(
-                    event.metadata.creation_timestamp.timestamp())
+                    event['object'].metadata.creation_timestamp.timestamp())
                 # namespace = event['object'].involved_object.namespace
                 cw_log_stream = '{}/{}/{}'.format(
                     k8s_namespace_name, kind, pod)

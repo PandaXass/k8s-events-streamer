@@ -139,6 +139,8 @@ def main():
                               }
                           ]}
 
+                logger.info(str(r))
+                logger.info(str(kwargs))
                 if not r['logStreams']:  # New log stream
                     logger.info('Create cloudwatch log stream {} in log group {}'.format(
                         cw_log_stream, cw_log_group))

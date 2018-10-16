@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import time
 import json
 import logging
@@ -79,9 +80,10 @@ def main():
 
     if os.environ.get('K8S_EVENTS_STREAMER_DEBUG', False):
         logger.setLevel(logging.DEBUG)
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     logger.info("Reading configuration...")
     aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')

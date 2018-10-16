@@ -130,7 +130,7 @@ def main():
                     k8s_namespace_name, kind, pod)
 
                 r = client_cw_logs.describe_log_streams(
-                    logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=1)
+                    logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=100)
 
                 kwargs = {'logGroupName': cw_log_group,
                           'logStreamName': cw_log_stream,
@@ -141,18 +141,20 @@ def main():
                               }
                           ]}
 
-                logger.info(str(r))
-                logger.info(str(kwargs))
+                logger.debug(str(r))
+                logger.debug(str(kwargs))
                 if not r['logStreams']:  # New log stream
                     logger.info('Create cloudwatch log stream {} in log group {}'.format(
                         cw_log_stream, cw_log_group))
                     client_cw_logs.create_log_stream(
-                        logGroupName=kwargs['logGroupName'], logStreamName=kwargs['logStreamName'])
+                        logGroupName=cw_log_group, logStreamName=cw_log_stream)
                     client_cw_logs.put_log_events(**kwargs)
                 else:
-                    if 'uploadSequenceToken' in r['logStreams'][0]:
-                        kwargs['sequenceToken'] = r['logStreams'][0]['uploadSequenceToken']
-                    client_cw_logs.put_log_events(**kwargs)
+                    for ls in r['logStreams']:
+                        if ls['logStreamName'] == cw_log_stream:
+                            if 'uploadSequenceToken' in r['logStreams'][0]:
+                                kwargs['sequenceToken'] = r['logStreams'][0]['uploadSequenceToken']
+                            client_cw_logs.put_log_events(**kwargs)
 
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(

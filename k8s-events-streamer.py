@@ -155,6 +155,7 @@ def main():
                             if 'uploadSequenceToken' in r['logStreams'][0]:
                                 kwargs['sequenceToken'] = r['logStreams'][0]['uploadSequenceToken']
                             client_cw_logs.put_log_events(**kwargs)
+                            break
 
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(

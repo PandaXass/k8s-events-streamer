@@ -130,7 +130,7 @@ def main():
                     k8s_namespace_name, kind, pod)
 
                 r = client_cw_logs.describe_log_streams(
-                    logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=100)
+                    logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=50)
 
                 kwargs = {'logGroupName': cw_log_group,
                           'logStreamName': cw_log_stream,
@@ -142,7 +142,6 @@ def main():
                           ]}
 
                 logger.debug(str(r))
-                logger.debug(str(kwargs))
                 if not r['logStreams']:  # New log stream
                     logger.info('Create cloudwatch log stream {} in log group {}'.format(
                         cw_log_stream, cw_log_group))

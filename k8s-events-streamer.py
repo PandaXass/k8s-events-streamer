@@ -117,8 +117,7 @@ def main():
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
         logger.info("Processing events...")
-        # for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
-        for event in k8s_watch.stream(v1.list_namespace):
+        for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
             logger.debug(str(event))
             if is_message_type_delete(event) and skip_delete_events != False:
                 logger.debug(

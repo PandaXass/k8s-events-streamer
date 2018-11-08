@@ -1,7 +1,7 @@
 FROM python:3.6-alpine
 
 RUN apk update && apk upgrade \
-    apk add --no-cache --virtual .tmp-packeges gcc build-base \
+    && apk add --no-cache --virtual .tmp-packeges gcc build-base \
     && openssl-dev libffi-dev \
     && pip install dumb-init==1.2.1\
     && apk del .tmp-packeges

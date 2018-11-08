@@ -43,12 +43,12 @@ def is_reason_in_include_list(event, include_list):
     return True if event['object'].reason in include_list else False
 
 
-def format_k8s_event_to_slack_message(event_object, notify=''):
+def format_k8s_event_to_slack_message(event_object, cluster_name, notify=''):
     event = event_object['object']
     message = {
         'attachments': [{
             'color': '#36a64f',
-            'title': event.message,
+            'title': '[{}] {}'.format(cluster_name, event.message),
             'text': 'event type: {}, event reason: {}'.format(event_object['type'], event.reason),
             'footer': 'First time seen: {}, Last time seen: {}, Count: {}'.format(event.first_timestamp.strftime('%d/%m/%Y %H:%M:%S %Z'),
                                                                                   event.last_timestamp.strftime(
@@ -90,6 +90,8 @@ def main():
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     logger.info("Reading configuration...")
+    k8s_cluster_name = read_env_variable_or_die(
+        'K8S_EVENTS_STREAMER_CLUSTER_NAME')
     aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')
     k8s_namespace_name = os.environ.get(
         'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
@@ -169,7 +171,7 @@ def main():
 
             if slack_web_hook_url:
                 message = format_k8s_event_to_slack_message(
-                    event, users_to_notify)
+                    event, k8s_cluster_name, users_to_notify)
                 post_slack_message(slack_web_hook_url, message)
         logger.info('No more events. Wait 30 sec and check again')
         time.sleep(30)

@@ -35,8 +35,12 @@ def is_message_type_delete(event):
     return True if event['type'] == 'DELETED' else False
 
 
-def is_reason_in_skip_list(event, skip_list):
-    return True if event['object'].reason in skip_list else False
+# def is_reason_in_skip_list(event, skip_list):
+#     return True if event['object'].reason in skip_list else False
+
+
+def is_reason_in_include_list(event, include_list):
+    return True if event['object'].reason in include_list else False
 
 
 def format_k8s_event_to_slack_message(event_object, notify=''):
@@ -91,8 +95,10 @@ def main():
         'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
     skip_delete_events = os.environ.get(
         'K8S_EVENTS_STREAMER_SKIP_DELETE_EVENTS', False)
-    reasons_to_skip = os.environ.get(
-        'K8S_EVENTS_STREAMER_LIST_OF_REASONS_TO_SKIP', '').split()
+    # reasons_to_skip = os.environ.get(
+    #     'K8S_EVENTS_STREAMER_LIST_OF_REASONS_TO_SKIP', '').split()
+    reasons_to_include = os.environ.get(
+        'K8S_EVENTS_STREAMER_LIST_OF_REASONS_TO_INCLUDE', '').split()
 
     # CloudWatch Logs
     cw_log_group = os.environ.get('K8S_EVENTS_STREAMER_CW_LOG_GROUP', '')
@@ -111,23 +117,29 @@ def main():
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
         logger.info("Processing events...")
-        for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
+        # for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
+        for event in k8s_watch.stream(v1.list_namespace):
             logger.debug(str(event))
             if is_message_type_delete(event) and skip_delete_events != False:
                 logger.debug(
-                    'Event type DELETED and skip deleted events is enabled. Skip this one')
+                    'Event type DELETED and skip deleted events is enabled. Skip this one.')
                 continue
-            if is_reason_in_skip_list(event, reasons_to_skip) == True:
-                logger.debug('Event reason is in the skip list. Skip it')
+            # if is_reason_in_skip_list(event, reasons_to_skip) == True:
+            #     logger.debug('Event reason is in the skip list. Skip it')
+            #     continue
+            if is_reason_in_include_list(event, reasons_to_include) == False:
+                logger.debug(
+                    'Event reason is not in the include list. Skip this one.')
                 continue
 
             if cw_log_group:
                 pod = event['object'].involved_object.name
                 kind = event['object'].involved_object.kind
+                namespace = event['object'].involved_object.namespace
                 creation_epoch_ms = int(
                     event['object'].metadata.creation_timestamp.timestamp()) * 1000
                 cw_log_stream = '{}/{}/{}'.format(
-                    k8s_namespace_name, kind, pod)
+                    namespace, kind, pod)
 
                 r = client_cw_logs.describe_log_streams(
                     logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=50)

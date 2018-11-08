@@ -1,10 +1,8 @@
 FROM python:3.6-alpine
 
 RUN apk update && apk upgrade \
-    && apk add --no-cache --virtual .tmp-packeges gcc build-base \
-    build-dependencies python-dev \
-    ca-certificates openssl-dev libffi-dev \
-    && pip install dumb-init==1.2.1\
+    && apk add --no-cache --virtual .tmp-packeges ca-certificates build-base python3-dev openssl-dev libffi-dev \
+    && pip install dumb-init==1.2.1 cryptography==2.2.2 cffi \
     && apk del .tmp-packeges
 
 RUN mkdir /app

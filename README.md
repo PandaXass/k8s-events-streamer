@@ -9,6 +9,11 @@ Extend the feature of streaming k8s events to AWS CloudWatch logs.
 
 Streams k8s events from k8s namespace to Slack channel as a Slack bot using incoming web hooks. No tokens needed.
 
+# Known issue
+
+* Model objects should tolerate None in place of empty lists https://github.com/kubernetes-client/python/issues/376.<br/>
+For now we have to patch the class in our code to workaround this issue.
+
 # Configuration
 
 Configuration is done via env variables that you set in deployment or configmap.

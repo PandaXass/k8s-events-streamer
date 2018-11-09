@@ -10,6 +10,20 @@ import boto3
 import kubernetes
 from dateutil.tz import tzlocal
 
+# Workaround for https://github.com/kubernetes-client/python/issues/376
+from kubernetes.client.models.v1_event import V1Event
+
+
+def set_involved_object(self, involved_object):
+    if involved_object is None:
+        involved_object = {}
+    self._involved_object = involved_object
+
+
+setattr(V1Event, 'involved_object', property(
+    fget=V1Event.involved_object.fget, fset=set_involved_object))
+# End of workaround
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -121,6 +135,11 @@ def main():
         logger.info("Processing events...")
         for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
             logger.debug(str(event))
+            if not event['object'].involved_object:
+                logger.debug(
+                    'Found empty involved_object in the event. Skip this one.'
+                )
+                continue
             if is_message_type_delete(event) and skip_delete_events != False:
                 logger.debug(
                     'Event type DELETED and skip deleted events is enabled. Skip this one.')

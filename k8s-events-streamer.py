@@ -10,20 +10,20 @@ import boto3
 import kubernetes
 from dateutil.tz import tzlocal
 
-# Workaround for https://github.com/kubernetes-client/python/issues/376
-from kubernetes.client.models.v1_object_reference import V1ObjectReference
-from kubernetes.client.models.v1_event import V1Event
+# # Workaround for https://github.com/kubernetes-client/python/issues/376
+# from kubernetes.client.models.v1_object_reference import V1ObjectReference
+# from kubernetes.client.models.v1_event import V1Event
 
 
-def set_involved_object(self, involved_object):
-    if involved_object is None:
-        involved_object = V1ObjectReference()
-    self._involved_object = involved_object
+# def set_involved_object(self, involved_object):
+#     if involved_object is None:
+#         involved_object = V1ObjectReference()
+#     self._involved_object = involved_object
 
 
-setattr(V1Event, 'involved_object', property(
-    fget=V1Event.involved_object.fget, fset=set_involved_object))
-# End of workaround
+# setattr(V1Event, 'involved_object', property(
+#     fget=V1Event.involved_object.fget, fset=set_involved_object))
+# # End of workaround
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -134,7 +134,14 @@ def main():
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
         logger.info("Processing events...")
-        for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
+        try:
+            events = k8s_watch.stream(
+                v1.list_namespaced_event, k8s_namespace_name)
+        except ValueError as e:
+            logger.error(e)
+            continue
+
+        for event in events:
             logger.debug(str(event))
             if not event['object'].involved_object:
                 logger.debug(
@@ -193,6 +200,7 @@ def main():
                 message = format_k8s_event_to_slack_message(
                     event, k8s_cluster_name, users_to_notify)
                 post_slack_message(slack_web_hook_url, message)
+
         logger.info('No more events. Wait 30 sec and check again')
         time.sleep(30)
 

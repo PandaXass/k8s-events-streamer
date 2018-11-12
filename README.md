@@ -12,7 +12,7 @@ Streams k8s events from k8s namespace to Slack channel as a Slack bot using inco
 # Known issue
 
 * Model objects should tolerate None in place of empty lists https://github.com/kubernetes-client/python/issues/376.<br/>
-For now we have to patch the class in our code to workaround this issue.
+For now we just ignore the _ValueError_ exceptions.
 
 # Configuration
 

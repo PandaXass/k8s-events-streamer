@@ -135,71 +135,68 @@ def main():
     while True:
         logger.info("Processing events...")
         try:
-            events = k8s_watch.stream(
-                v1.list_namespaced_event, k8s_namespace_name)
+            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace_name):
+                logger.debug(str(event))
+                if not event['object'].involved_object:
+                    logger.debug(
+                        'Found empty involved_object in the event. Skip this one.'
+                    )
+                    continue
+                if is_message_type_delete(event) and skip_delete_events != False:
+                    logger.debug(
+                        'Event type DELETED and skip deleted events is enabled. Skip this one.')
+                    continue
+                # if is_reason_in_skip_list(event, reasons_to_skip) == True:
+                #     logger.debug('Event reason is in the skip list. Skip it')
+                #     continue
+                if is_reason_in_include_list(event, reasons_to_include) == False:
+                    logger.debug(
+                        'Event reason is not in the include list. Skip this one.')
+                    continue
+
+                if cw_log_group:
+                    pod = event['object'].involved_object.name
+                    kind = event['object'].involved_object.kind
+                    namespace = event['object'].involved_object.namespace
+                    creation_epoch_ms = int(
+                        event['object'].metadata.creation_timestamp.timestamp()) * 1000
+                    cw_log_stream = '{}/{}/{}'.format(
+                        namespace, kind, pod)
+
+                    r = client_cw_logs.describe_log_streams(
+                        logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=50)
+
+                    kwargs = {'logGroupName': cw_log_group,
+                              'logStreamName': cw_log_stream,
+                              'logEvents': [
+                                  {
+                                      'timestamp': creation_epoch_ms,
+                                      'message': str(event)
+                                  }
+                              ]}
+
+                    logger.debug(str(r))
+                    if not r['logStreams']:  # New log stream
+                        logger.info('Create cloudwatch log stream {} in log group {}'.format(
+                            cw_log_stream, cw_log_group))
+                        client_cw_logs.create_log_stream(
+                            logGroupName=cw_log_group, logStreamName=cw_log_stream)
+                        client_cw_logs.put_log_events(**kwargs)
+                    else:
+                        for ls in r['logStreams']:
+                            if ls['logStreamName'] == cw_log_stream:
+                                if 'uploadSequenceToken' in r['logStreams'][0]:
+                                    kwargs['sequenceToken'] = r['logStreams'][0]['uploadSequenceToken']
+                                client_cw_logs.put_log_events(**kwargs)
+                                break
+
+                if slack_web_hook_url:
+                    message = format_k8s_event_to_slack_message(
+                        event, k8s_cluster_name, users_to_notify)
+                    post_slack_message(slack_web_hook_url, message)
         except ValueError as e:
             logger.error(e)
             continue
-
-        for event in events:
-            logger.debug(str(event))
-            if not event['object'].involved_object:
-                logger.debug(
-                    'Found empty involved_object in the event. Skip this one.'
-                )
-                continue
-            if is_message_type_delete(event) and skip_delete_events != False:
-                logger.debug(
-                    'Event type DELETED and skip deleted events is enabled. Skip this one.')
-                continue
-            # if is_reason_in_skip_list(event, reasons_to_skip) == True:
-            #     logger.debug('Event reason is in the skip list. Skip it')
-            #     continue
-            if is_reason_in_include_list(event, reasons_to_include) == False:
-                logger.debug(
-                    'Event reason is not in the include list. Skip this one.')
-                continue
-
-            if cw_log_group:
-                pod = event['object'].involved_object.name
-                kind = event['object'].involved_object.kind
-                namespace = event['object'].involved_object.namespace
-                creation_epoch_ms = int(
-                    event['object'].metadata.creation_timestamp.timestamp()) * 1000
-                cw_log_stream = '{}/{}/{}'.format(
-                    namespace, kind, pod)
-
-                r = client_cw_logs.describe_log_streams(
-                    logGroupName=cw_log_group, logStreamNamePrefix=cw_log_stream, limit=50)
-
-                kwargs = {'logGroupName': cw_log_group,
-                          'logStreamName': cw_log_stream,
-                          'logEvents': [
-                              {
-                                  'timestamp': creation_epoch_ms,
-                                  'message': str(event)
-                              }
-                          ]}
-
-                logger.debug(str(r))
-                if not r['logStreams']:  # New log stream
-                    logger.info('Create cloudwatch log stream {} in log group {}'.format(
-                        cw_log_stream, cw_log_group))
-                    client_cw_logs.create_log_stream(
-                        logGroupName=cw_log_group, logStreamName=cw_log_stream)
-                    client_cw_logs.put_log_events(**kwargs)
-                else:
-                    for ls in r['logStreams']:
-                        if ls['logStreamName'] == cw_log_stream:
-                            if 'uploadSequenceToken' in r['logStreams'][0]:
-                                kwargs['sequenceToken'] = r['logStreams'][0]['uploadSequenceToken']
-                            client_cw_logs.put_log_events(**kwargs)
-                            break
-
-            if slack_web_hook_url:
-                message = format_k8s_event_to_slack_message(
-                    event, k8s_cluster_name, users_to_notify)
-                post_slack_message(slack_web_hook_url, message)
 
         logger.info('No more events. Wait 30 sec and check again')
         time.sleep(30)

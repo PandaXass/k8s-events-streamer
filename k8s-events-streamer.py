@@ -11,12 +11,13 @@ import kubernetes
 from dateutil.tz import tzlocal
 
 # Workaround for https://github.com/kubernetes-client/python/issues/376
+from kubernetes.client.models.v1_object_reference import V1ObjectReference
 from kubernetes.client.models.v1_event import V1Event
 
 
 def set_involved_object(self, involved_object):
     if involved_object is None:
-        involved_object = {}
+        involved_object = V1ObjectReference()
     self._involved_object = involved_object
 
 

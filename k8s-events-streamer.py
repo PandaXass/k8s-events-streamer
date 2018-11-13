@@ -45,8 +45,8 @@ def post_slack_message(hook_url, message):
     requests.post(hook_url, data=str(message), headers=headers)
 
 
-def is_message_type_delete(event):
-    return True if event['type'] == 'DELETED' else False
+def is_type_in_skip_list(event, skip_list):
+    return True if event['type'] in skip_list else False
 
 
 def is_reason_in_include_list(event, include_list):
@@ -142,8 +142,8 @@ def main():
     aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')
     k8s_namespace = os.environ.get(
         'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
-    skip_delete_events = os.environ.get(
-        'K8S_EVENTS_STREAMER_SKIP_DELETE_EVENTS', False)
+    types_to_skip = os.environ.get(
+        'K8S_EVENTS_STREAMER_SKIP_EVENT_TYPES', 'DELETE').split()
     reasons_to_include = os.environ.get(
         'K8S_EVENTS_STREAMER_LIST_OF_REASONS_TO_INCLUDE', '').split()
 
@@ -167,18 +167,18 @@ def main():
         try:
             for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace):
                 logger.debug(str(event))
-                if not event['object'].involved_object:
+                # if not event['object'].involved_object:
+                #     logger.debug(
+                #         'Found empty involved_object in the event. Skip this one.'
+                #     )
+                #     continue
+                if is_type_in_skip_list(event, types_to_skip) == True:
                     logger.debug(
-                        'Found empty involved_object in the event. Skip this one.'
-                    )
-                    continue
-                if is_message_type_delete(event) and skip_delete_events != False:
-                    logger.debug(
-                        'Event type DELETED and skip deleted events is enabled. Skip this one.')
+                        'Event type {} is in the skip list. Skip this one.'.format(event['type']))
                     continue
                 if is_reason_in_include_list(event, reasons_to_include) == False:
                     logger.debug(
-                        'Event reason is not in the include list. Skip this one.')
+                        'Event reason {} is not in the include list. Skip this one.'.format(event['object'].reason))
                     continue
 
                 if cw_log_group:
@@ -188,13 +188,13 @@ def main():
                     message = format_k8s_event_to_slack_message(
                         event, k8s_cluster_name, users_to_notify)
                     post_slack_message(slack_web_hook_url, message)
-        except ValueError as e:
+        except ValueError as e:  # Workaround for https://github.com/kubernetes-client/python/issues/376
             logger.error(e)
-            logger.info('Wait 30 sec and check again')
+            logger.warning('Wait 30 sec and check again due to error.')
             time.sleep(30)
             continue
 
-        logger.info('Wait 30 sec and check again')
+        logger.info('Wait 30 sec and check again.')
         time.sleep(30)
 
     logger.info("Done")

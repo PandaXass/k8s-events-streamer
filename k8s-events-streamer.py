@@ -82,7 +82,7 @@ def format_k8s_event_to_slack_message(event_object, cluster_name, notify=''):
         }]
     }
     if event.type == 'Warning':
-        message['attachments'][0]['color'] = '#cc4d26'
+        message['attachments'][0]['color'] = '#f1c232'
         if notify != '':
             message['text'] = '{} there is a warning for you to check'.format(
                 notify)

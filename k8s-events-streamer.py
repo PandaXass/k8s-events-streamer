@@ -140,8 +140,8 @@ def main():
     k8s_cluster_name = read_env_variable_or_die(
         'K8S_EVENTS_STREAMER_CLUSTER_NAME')
     aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')
-    k8s_namespaces = os.environ.get(
-        'K8S_EVENTS_STREAMER_NAMESPACE', 'default').split()
+    k8s_namespace = os.environ.get(
+        'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
     skip_delete_events = os.environ.get(
         'K8S_EVENTS_STREAMER_SKIP_DELETE_EVENTS', False)
     reasons_to_include = os.environ.get(
@@ -163,35 +163,36 @@ def main():
     if cw_log_group:
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
-        for namespace in k8s_namespaces:
-            logger.info("Processing events in {}...".format(namespace))
-            try:
-                for event in k8s_watch.stream(v1.list_namespaced_event, namespace):
-                    logger.debug(str(event))
-                    if not event['object'].involved_object:
-                        logger.debug(
-                            'Found empty involved_object in the event. Skip this one.'
-                        )
-                        continue
-                    if is_message_type_delete(event) and skip_delete_events != False:
-                        logger.debug(
-                            'Event type DELETED and skip deleted events is enabled. Skip this one.')
-                        continue
-                    if is_reason_in_include_list(event, reasons_to_include) == False:
-                        logger.debug(
-                            'Event reason is not in the include list. Skip this one.')
-                        continue
+        logger.info("Processing events in {}...".format(k8s_namespace))
+        try:
+            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace):
+                logger.debug(str(event))
+                if not event['object'].involved_object:
+                    logger.debug(
+                        'Found empty involved_object in the event. Skip this one.'
+                    )
+                    continue
+                if is_message_type_delete(event) and skip_delete_events != False:
+                    logger.debug(
+                        'Event type DELETED and skip deleted events is enabled. Skip this one.')
+                    continue
+                if is_reason_in_include_list(event, reasons_to_include) == False:
+                    logger.debug(
+                        'Event reason is not in the include list. Skip this one.')
+                    continue
 
-                    if cw_log_group:
-                        post_cw_log(event, cw_log_group, client_cw_logs)
+                if cw_log_group:
+                    post_cw_log(event, cw_log_group, client_cw_logs)
 
-                    if slack_web_hook_url:
-                        message = format_k8s_event_to_slack_message(
-                            event, k8s_cluster_name, users_to_notify)
-                        post_slack_message(slack_web_hook_url, message)
-            except ValueError as e:
-                logger.error(e)
-                continue
+                if slack_web_hook_url:
+                    message = format_k8s_event_to_slack_message(
+                        event, k8s_cluster_name, users_to_notify)
+                    post_slack_message(slack_web_hook_url, message)
+        except ValueError as e:
+            logger.error(e)
+            logger.info('Wait 30 sec and check again')
+            time.sleep(30)
+            continue
 
         logger.info('Wait 30 sec and check again')
         time.sleep(30)

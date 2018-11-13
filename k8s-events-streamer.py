@@ -163,9 +163,9 @@ def main():
     if cw_log_group:
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
-        logger.info("Processing events...")
-        try:
-            for namespace in k8s_namespaces:
+        for namespace in k8s_namespaces:
+            logger.info("Processing events in {}...".format(namespace))
+            try:
                 for event in k8s_watch.stream(v1.list_namespaced_event, namespace):
                     logger.debug(str(event))
                     if not event['object'].involved_object:
@@ -189,13 +189,11 @@ def main():
                         message = format_k8s_event_to_slack_message(
                             event, k8s_cluster_name, users_to_notify)
                         post_slack_message(slack_web_hook_url, message)
-        except ValueError as e:
-            logger.error(e)
-            logger.info('Wait 30 sec and check again')
-            time.sleep(30)
-            continue
+            except ValueError as e:
+                logger.error(e)
+                continue
 
-        logger.info('No more events. Wait 30 sec and check again')
+        logger.info('Wait 30 sec and check again')
         time.sleep(30)
 
     logger.info("Done")

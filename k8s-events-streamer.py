@@ -70,7 +70,7 @@ def my_unmarshal_event(self, data, return_type):
     logger.debug(str(js))
     js['raw_object'] = js['object']
     if return_type:
-        if js.get('type') == 'Error':
+        if js.get('type') == 'ERROR':
             if js.get('object', {}).get('reason') == 'Expired':
                 raise TimeoutError(js['object']['message'])
         obj = SimpleNamespace(data=json.dumps(js['raw_object']))

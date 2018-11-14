@@ -140,8 +140,6 @@ def main():
     k8s_cluster_name = read_env_variable_or_die(
         'K8S_EVENTS_STREAMER_CLUSTER_NAME')
     aws_region = os.environ.get('K8S_EVENTS_STREAMER_AWS_REGION', 'us-east-1')
-    k8s_namespace = os.environ.get(
-        'K8S_EVENTS_STREAMER_NAMESPACE', 'default')
     types_to_skip = os.environ.get(
         'K8S_EVENTS_STREAMER_SKIP_EVENT_TYPES', 'DELETE').split()
     reasons_to_include = os.environ.get(
@@ -163,9 +161,9 @@ def main():
     if cw_log_group:
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
-        logger.info("Processing events in {}...".format(k8s_namespace))
+        logger.info("Processing events...")
         try:
-            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace, resource_version=0):
+            for event in k8s_watch.stream(v1.list_event_for_all_namespaces, resource_version=0, timeout_seconds=30):
                 logger.debug(str(event))
                 if not event['object'].involved_object:
                     logger.info(

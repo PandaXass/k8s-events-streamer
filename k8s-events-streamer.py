@@ -10,20 +10,20 @@ import boto3
 import kubernetes
 from dateutil.tz import tzlocal
 
-# # Workaround for https://github.com/kubernetes-client/python/issues/376
-# from kubernetes.client.models.v1_object_reference import V1ObjectReference
-# from kubernetes.client.models.v1_event import V1Event
+# Workaround for https://github.com/kubernetes-client/python/issues/376
+from kubernetes.client.models.v1_object_reference import V1ObjectReference
+from kubernetes.client.models.v1_event import V1Event
 
 
-# def set_involved_object(self, involved_object):
-#     if involved_object is None:
-#         involved_object = V1ObjectReference()
-#     self._involved_object = involved_object
+def set_involved_object(self, involved_object):
+    if involved_object is None:
+        involved_object = V1ObjectReference()
+    self._involved_object = involved_object
 
 
-# setattr(V1Event, 'involved_object', property(
-#     fget=V1Event.involved_object.fget, fset=set_involved_object))
-# # End of workaround
+setattr(V1Event, 'involved_object', property(
+    fget=V1Event.involved_object.fget, fset=set_involved_object))
+# End of workaround
 
 logger = logging.getLogger()
 
@@ -165,13 +165,13 @@ def main():
     while True:
         logger.info("Processing events in {}...".format(k8s_namespace))
         try:
-            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace):
+            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace, resource_version=0):
                 logger.debug(str(event))
-                # if not event['object'].involved_object:
-                #     logger.debug(
-                #         'Found empty involved_object in the event. Skip this one.'
-                #     )
-                #     continue
+                if not event['object'].involved_object:
+                    logger.debug(
+                        'Found empty involved_object in the event. Skip this one.'
+                    )
+                    continue
                 if is_type_in_skip_list(event, types_to_skip) == True:
                     logger.debug(
                         'Event type {} is in the skip list. Skip this one.'.format(event['type']))

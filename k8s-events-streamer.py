@@ -10,7 +10,9 @@ import boto3
 import kubernetes
 from dateutil.tz import tzlocal
 
-# Workaround for https://github.com/kubernetes-client/python/issues/376
+# Workaround for following issues
+# https://github.com/kubernetes-client/python/issues/376
+# https://github.com/kubernetes-client/python-base/issues/57
 
 from kubernetes.client.models.v1_object_reference import V1ObjectReference
 from kubernetes.client.models.v1_event import V1Event
@@ -26,7 +28,40 @@ setattr(V1Event, 'involved_object', property(
     fget=V1Event.involved_object.fget, fset=set_involved_object))
 
 
-from kubernetes.watch import Watch, SimpleNamespace
+import pydoc
+from kubernetes.watch import Watch
+
+PYDOC_RETURN_LABEL = ":return:"
+
+
+class SimpleNamespace:
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+def _find_return_type(func):
+    for line in pydoc.getdoc(func).splitlines():
+        if line.startswith(PYDOC_RETURN_LABEL):
+            return line[len(PYDOC_RETURN_LABEL):].strip()
+    return ""
+
+
+def iter_resp_lines(resp):
+    prev = ""
+    for seg in resp.read_chunked(decode_content=False):
+        if isinstance(seg, bytes):
+            seg = seg.decode('utf8')
+        seg = prev + seg
+        lines = seg.split("\n")
+        if not seg.endswith("\n"):
+            prev = lines[-1]
+            lines = lines[:-1]
+        else:
+            prev = ""
+        for line in lines:
+            if line:
+                yield line
 
 
 def my_unmarshal_event(self, data, return_type):

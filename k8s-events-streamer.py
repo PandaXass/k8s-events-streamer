@@ -11,6 +11,7 @@ import kubernetes
 from dateutil.tz import tzlocal
 
 # Workaround for https://github.com/kubernetes-client/python/issues/376
+
 from kubernetes.client.models.v1_object_reference import V1ObjectReference
 from kubernetes.client.models.v1_event import V1Event
 
@@ -23,7 +24,31 @@ def set_involved_object(self, involved_object):
 
 setattr(V1Event, 'involved_object', property(
     fget=V1Event.involved_object.fget, fset=set_involved_object))
+
+
+from kubernetes.base.watch import Watch, SimpleNamespace
+
+
+def my_unmarshal_event(self, data, return_type):
+    js = json.loads(data)
+    logger.debug("func: my_unmarshal_event")
+    logger.debug(str(js))
+    js['raw_object'] = js['object']
+    if return_type:
+        if js.get('type') == 'Error':
+            if js.get('object', {}).get('reason') == 'Expired':
+                raise TimeoutError(js['object']['message'])
+        obj = SimpleNamespace(data=json.dumps(js['raw_object']))
+        js['object'] = self._api_client.deserialize(obj, return_type)
+        if hasattr(js['object'], 'metadata'):
+            self.resource_version = js['object'].metadata.resource_version
+    return js
+
+
+Watch.unmarshal_event = my_unmarshal_event
+
 # End of workaround
+
 
 logger = logging.getLogger()
 
@@ -163,7 +188,7 @@ def main():
     while True:
         logger.info("Processing events...")
         try:
-            for event in k8s_watch.stream(v1.list_event_for_all_namespaces, resource_version=0, timeout_seconds=30):
+            for event in k8s_watch.stream(v1.list_event_for_all_namespaces):
                 logger.debug(str(event))
                 if not event['object'].involved_object:
                     logger.info(

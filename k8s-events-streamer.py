@@ -165,7 +165,7 @@ def main():
     while True:
         logger.info("Processing events in {}...".format(k8s_namespace))
         try:
-            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace, resource_version=1):
+            for event in k8s_watch.stream(v1.list_namespaced_event, k8s_namespace, resource_version=0):
                 logger.debug(str(event))
                 if not event['object'].involved_object:
                     logger.info(

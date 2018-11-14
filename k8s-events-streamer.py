@@ -26,7 +26,7 @@ setattr(V1Event, 'involved_object', property(
     fget=V1Event.involved_object.fget, fset=set_involved_object))
 
 
-from kubernetes.base.watch import Watch, SimpleNamespace
+from kubernetes.watch import Watch, SimpleNamespace
 
 
 def my_unmarshal_event(self, data, return_type):

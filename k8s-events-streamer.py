@@ -246,7 +246,7 @@ def main():
                     message = format_k8s_event_to_slack_message(
                         event, k8s_cluster_name, users_to_notify)
                     post_slack_message(slack_web_hook_url, message)
-        except ValueError as e:  # Workaround for https://github.com/kubernetes-client/python/issues/376
+        except TimeoutError as e:
             logger.error(e)
             logger.warning('Wait 30 sec and check again due to error.')
             time.sleep(30)

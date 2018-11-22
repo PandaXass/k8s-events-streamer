@@ -226,7 +226,7 @@ def main():
         try:
             for event in k8s_watch.stream(v1.list_event_for_all_namespaces, resource_version=k8s_resource_version, timeout_seconds=300):
                 logger.debug(str(event))
-                k8s_resource_version = event['object'].metadata['resource_version']
+                k8s_resource_version = event['object'].metadata.resource_version
                 if not event['object'].involved_object:
                     logger.info(
                         'Found empty involved_object in the event. Skip this one.'

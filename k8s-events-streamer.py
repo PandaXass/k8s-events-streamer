@@ -218,13 +218,15 @@ def main():
     k8s_watch = kubernetes.watch.Watch()
     logger.info("Configuration is OK")
 
+    k8s_resource_version = 0
     if cw_log_group:
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
-        logger.info("Processing events...")
+        logger.info("Processing events for 300 sec...")
         try:
-            for event in k8s_watch.stream(v1.list_event_for_all_namespaces):
+            for event in k8s_watch.stream(v1.list_event_for_all_namespaces, resource_version=k8s_resource_version, timeout_seconds=300):
                 logger.debug(str(event))
+                k8s_resource_version = event['object'].metadata['resource_version']
                 if not event['object'].involved_object:
                     logger.info(
                         'Found empty involved_object in the event. Skip this one.'

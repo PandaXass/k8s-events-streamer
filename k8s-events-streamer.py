@@ -249,6 +249,7 @@ def main():
                         event, k8s_cluster_name, users_to_notify)
                     post_slack_message(slack_web_hook_url, message)
         except TimeoutError as e:
+            k8s_resource_version = 0  # reset resource version if error
             logger.error(e)
             logger.warning('Wait 30 sec and check again due to error.')
             time.sleep(30)

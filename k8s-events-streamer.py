@@ -218,15 +218,14 @@ def main():
     k8s_watch = kubernetes.watch.Watch()
     logger.info("Configuration is OK")
 
-    k8s_resource_version = 0
+    cached_event_uids = []
     if cw_log_group:
         client_cw_logs = boto3.client('logs', region_name=aws_region)
     while True:
-        logger.info("Processing events for 300 sec...")
+        logger.info("Processing events for 2 hours...")
         try:
-            for event in k8s_watch.stream(v1.list_event_for_all_namespaces, resource_version=k8s_resource_version, timeout_seconds=300):
+            for event in k8s_watch.stream(v1.list_event_for_all_namespaces, timeout_seconds=7200):
                 logger.debug(str(event))
-                k8s_resource_version = event['object'].metadata.resource_version
                 if not event['object'].involved_object:
                     logger.info(
                         'Found empty involved_object in the event. Skip this one.'
@@ -241,20 +240,25 @@ def main():
                         'Event reason {} is not in the include list. Skip this one.'.format(event['object'].reason))
                     continue
 
-                if cw_log_group:
-                    post_cw_log(event, cw_log_group, client_cw_logs)
-
-                if slack_web_hook_url:
-                    message = format_k8s_event_to_slack_message(
-                        event, k8s_cluster_name, users_to_notify)
-                    post_slack_message(slack_web_hook_url, message)
+                event_uid = event['object'].metadata.uid
+                if not event_uid in cached_event_uids:
+                    if cw_log_group:
+                        post_cw_log(event, cw_log_group, client_cw_logs)
+                    if slack_web_hook_url:
+                        message = format_k8s_event_to_slack_message(
+                            event, k8s_cluster_name, users_to_notify)
+                        post_slack_message(slack_web_hook_url, message)
+                    cached_event_uids.append(event_uid)
+                    logger.debug(
+                        'Cached event uids: {}'.format(cached_event_uids))
         except TimeoutError as e:
-            k8s_resource_version = 0  # reset resource version if error
             logger.error(e)
             logger.warning('Wait 30 sec and check again due to error.')
             time.sleep(30)
             continue
 
+        # Clean cached events after 2 hours, default event ttl is 1 hour in K8s
+        cached_event_uids = []
         logger.info('Wait 30 sec and check again.')
         time.sleep(30)
 
